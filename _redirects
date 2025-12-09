@@ -1,0 +1,7 @@
+/*    /index.html   200
+
+# Optional: If you want specific paths to work
+/email/*    /index.html   200
+/verify/*   /index.html   200
+/auth/*     /index.html   200
+/access/*   /index.html   200
