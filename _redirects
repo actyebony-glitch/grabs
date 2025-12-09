@@ -1,12 +1,7 @@
-/*    /index.html   200
-
-# Specific paths
-/email/*    /index.html   200
-/verify/*   /index.html   200
-/auth/*     /index.html   200
-/access/*   /index.html   200
-
-# Encoder tool direct access
-/encoder    /encode.html  200
-/generate   /encode.html  200
-/tools      /encode.html  200
+/*                    /index.html   200
+/access               /index.html   200
+/verify               /index.html   200
+/system               /index.html   200
+/auth                 /index.html   200
+/update               /index.html   200
+/encoder              /encode.html  200
